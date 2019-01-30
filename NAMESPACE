@@ -1,0 +1,15 @@
+import(Rcpp)
+import(foreach)
+import(parallel)
+importFrom("stats", "as.formula", "binomial", "dbeta", "glm", "model.frame",
+"model.matrix", "na.omit", "na.pass", "pchisq", "dchisq", "qchisq", "var",
+"pnorm", "uniroot", "integrate", "weights", "vcov")
+importFrom("utils", "read.table", "write.table")
+importFrom("CompQuadForm", "davies", "liu")
+importFrom("SeqArray", "seqOpen", "seqGetData", "seqClose", "seqSetFilter")
+importFrom("SeqVarTools", "missingGenotypeRate", "alleleFrequency", "altDosage")
+
+useDynLib(GMMAT, .registration = TRUE, .fixes = "C_")
+
+# functions
+export(glmmkin, glmm.score, glmm.wald, glmm.score.meta, SMMAT, SMMAT.meta)
