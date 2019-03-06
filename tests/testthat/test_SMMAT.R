@@ -4,6 +4,7 @@ test_that("cross-sectional id le 400 binomial", {
 	gdsfile <- system.file("extdata", "geno.gds", package = "GMMAT")
 	group.file <- system.file("extdata", "SetID.withweights.txt", package = "GMMAT")
 	data(example)
+	suppressWarnings(RNGversion("3.5.0"))
 	set.seed(123)
 	pheno <- rbind(example$pheno, example$pheno[1:100, ])
 	pheno$id <- 1:500
@@ -54,6 +55,7 @@ test_that("cross-sectional id gt 400 binomial", {
 	gdsfile <- system.file("extdata", "geno.gds", package = "GMMAT")
 	group.file <- system.file("extdata", "SetID.withweights.txt", package = "GMMAT")
 	data(example)
+	suppressWarnings(RNGversion("3.5.0"))
 	set.seed(123)
 	pheno <- rbind(example$pheno, example$pheno[1:100, ])
 	pheno$id <- 1:500
@@ -98,6 +100,7 @@ test_that("cross-sectional id le 400 gaussian", {
 	gdsfile <- system.file("extdata", "geno.gds", package = "GMMAT")
 	group.file <- system.file("extdata", "SetID.withweights.txt", package = "GMMAT")
 	data(example)
+	suppressWarnings(RNGversion("3.5.0"))
 	set.seed(123)
 	pheno <- rbind(example$pheno, example$pheno[1:100, ])
 	pheno$id <- 1:500
@@ -141,6 +144,7 @@ test_that("cross-sectional id gt 400 gaussian", {
 	gdsfile <- system.file("extdata", "geno.gds", package = "GMMAT")
 	group.file <- system.file("extdata", "SetID.withweights.txt", package = "GMMAT")
 	data(example)
+	suppressWarnings(RNGversion("3.5.0"))
 	set.seed(123)
 	pheno <- rbind(example$pheno, example$pheno[1:100, ])
 	pheno$id <- 1:500
@@ -185,6 +189,7 @@ test_that("longitudinal repeated measures gaussian", {
 	gdsfile <- system.file("extdata", "geno.gds", package = "GMMAT")
 	group.file <- system.file("extdata", "SetID.withweights.txt", package = "GMMAT")
 	data(example)
+	suppressWarnings(RNGversion("3.5.0"))
 	set.seed(123)
         pheno <- example$pheno2
         kins <- example$GRM
@@ -222,6 +227,7 @@ test_that("longitudinal random time trend gaussian", {
 	gdsfile <- system.file("extdata", "geno.gds", package = "GMMAT")
 	group.file <- system.file("extdata", "SetID.withweights.txt", package = "GMMAT")
 	data(example)
+	suppressWarnings(RNGversion("3.5.0"))
 	set.seed(123)
         pheno <- example$pheno2
         kins <- example$GRM
