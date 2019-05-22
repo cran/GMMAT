@@ -67,7 +67,7 @@ test_that("cross-sectional id gt 400 binomial", {
 	outfile2 <- tempfile()
 	out2 <- SMMAT(obj2, gdsfile, group.file, meta.file.prefix = outfile2, MAF.range = c(0, 0.5), miss.cutoff = 1, method = "davies", tests = c("O", "E"))
 	out2.meta <- SMMAT.meta(outfile2, group.file = group.file, tests = c("O", "E"))
-	expect_equal(signif(out2[, -(1:8)]), signif(out2.meta[, -(1:2)]))
+	expect_equal(signif(out2[, -(1:8)], digits = 5), signif(out2.meta[, -(1:2)], digits = 5))
 	unlink(c(paste0(outfile1, ".score.*"), paste0(outfile1, ".var.*"), paste0(outfile2, ".score.*"), paste0(outfile2, ".var.*")))
 })
 
