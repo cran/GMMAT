@@ -2,9 +2,7 @@ import(Rcpp)
 import(foreach)
 import(parallel)
 import(Matrix)
-importFrom("stats", "as.formula", "binomial", "dbeta", "glm", "model.frame",
-"model.matrix", "na.omit", "na.pass", "pchisq", "dchisq", "qchisq", "var",
-"pnorm", "uniroot", "integrate", "weights", "vcov")
+importFrom("stats", "as.formula", "binomial", "dbeta", "glm", "model.frame", "model.matrix", "na.omit", "na.pass", "pchisq", "dchisq", "qchisq", "var", "pnorm", "uniroot", "integrate", "weights", "vcov", "coef", "napredict", "naresid", "printCoefmat")
 importFrom("utils", "read.table", "write.table", "txtProgressBar",
 "setTxtProgressBar")
 if(tools:::.OStype() == "windows") importFrom("utils", "winProgressBar", "setWinProgressBar")
@@ -16,3 +14,9 @@ useDynLib(GMMAT, .registration = TRUE, .fixes = "C_")
 
 # functions
 export(glmmkin, glmm.score, glmm.wald, glmm.score.meta, SMMAT, SMMAT.prep, SMMAT.lowmem, SMMAT.meta)
+S3method(coef, glmmkin)
+S3method(residuals, glmmkin)
+S3method(predict, glmmkin)
+S3method(print, glmmkin)
+S3method(summary, glmmkin)
+S3method(print, summary.glmmkin)

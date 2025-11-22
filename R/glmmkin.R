@@ -45,9 +45,11 @@ glmmkin <- function(fixed, data = parent.frame(), kins = NULL, id, random.slope 
   } else {
     fit0 <- do.call("glm", list(formula = fixed, data = data, family = family, ...))
   }
+  is.repeated <- FALSE
   if(any(duplicated(data[idx, id]))) {
     if(multi.pheno) stop("Error: Duplicated id detected...\nNot currently supported for multiple phenotypes...\n")
     cat("Duplicated id detected...\nAssuming longitudinal data with repeated measures...\n")
+    is.repeated <- TRUE
     if(method.optim == "Brent") {
       if(is.null(kins)) {
         kins <- diag(length(unique(data[idx, id])))
@@ -99,23 +101,25 @@ glmmkin <- function(fixed, data = parent.frame(), kins = NULL, id, random.slope 
       sqrtW <- mu.eta/sqrt(1/as.vector(weights(fit0))*family$variance(mu))
       res <- y - mu
       tau <- summary(fit0)$dispersion
+      names(tau) <- "dispersion"
       Sigma_i <- Diagonal(x = sqrtW^2/tau)
       rownames(Sigma_i) <- colnames(Sigma_i) <- rownames(X)
-      fit <- list(theta=tau, n.pheno=1, n.groups=1, coefficients=alpha, linear.predictors=eta, fitted.values=mu, Y=Y, X=X, P=NULL, residuals=res, scaled.residuals=res*as.vector(weights(fit0))/tau, cov=vcov(fit0), Sigma_i=Sigma_i,Sigma_iX=X*sqrtW^2/tau,converged=TRUE, call = call, id_include = data[idx, id])
+      fit <- list(theta=tau, n.pheno=1, n.groups=1, coefficients=alpha, linear.predictors=eta, fitted.values=mu, Y=Y, X=X, P=NULL, residuals=res, scaled.residuals=res*as.vector(weights(fit0))/tau, cov=vcov(fit0), Sigma_i=Sigma_i,Sigma_iX=X*sqrtW^2/tau,converged=TRUE, call = call, family = family, id_include = data[idx, id])
       class(fit) <- "glmmkin"
     }
     return(fit)
   }
   group.id <- if(is.null(groups)) rep(1, length(idx)) else data[idx, groups]
   time.var <- if(is.null(random.slope)) NULL else data[idx, random.slope]
-  fit <- glmmkin.fit(fit0, kins, time.var, group.id, method = method, method.optim = method.optim, maxiter = maxiter, tol = tol, taumin = taumin, taumax = taumax, tauregion = tauregion, verbose = verbose)
+  fit <- glmmkin.fit(fit0, kins, is.repeated, time.var, group.id, method = method, method.optim = method.optim, maxiter = maxiter, tol = tol, taumin = taumin, taumax = taumax, tauregion = tauregion, verbose = verbose)
   fit$call <- call
+  fit$family <- family
   fit$id_include <- data[idx, id]
   class(fit) <- if(multi.pheno) "glmmkin.multi" else "glmmkin"
   return(fit)
 }
 
-glmmkin.fit <- function(fit0, kins, time.var, group.id, method = "REML", method.optim = "AI", maxiter = 500, tol = 1e-5, taumin = 1e-5, taumax = 1e5, tauregion = 10, verbose = FALSE) {
+glmmkin.fit <- function(fit0, kins, is.repeated, time.var, group.id, method = "REML", method.optim = "AI", maxiter = 500, tol = 1e-5, taumin = 1e-5, taumax = 1e5, tauregion = 10, verbose = FALSE) {
   if(method.optim == "Brent") {
     fit <- glmmkin.brent(fit0, kins, method = method, maxiter = maxiter, tol = tol, taumin = taumin, taumax = taumax, tauregion = tauregion, verbose = verbose)
     if(fit$theta[2]/fit$theta[1] < 1.01 * tol) {
@@ -124,6 +128,8 @@ glmmkin.fit <- function(fit0, kins, time.var, group.id, method = "REML", method.
     }
   } else {
     names(kins) <- paste("kins", 1:length(kins), sep="")
+    if(is.repeated) names(kins)[length(kins)] <- "indiv"
+    names.kins <- names(kins)
     if(method.optim == "AI") {
       group.unique <- unique(group.id)
       group.idx <- list()
@@ -222,11 +228,11 @@ glmmkin.fit <- function(fit0, kins, time.var, group.id, method = "REML", method.
         if(ng > 1) names(fit$theta)[1:ng] <- group.unique
         else names(fit$theta)[1] <- "dispersion"
         if(!is.null(time.var)) {
-          names(fit$theta)[ng+(1:q)] <- paste0("kins", 1:q, ".var.intercept")
-          names(fit$theta)[ng+q+(1:q)] <- paste0("kins", 1:q, ".cov.intercept.slope")
-          names(fit$theta)[ng+2*q+(1:q)] <- paste0("kins", 1:q, ".var.slope")
+          names(fit$theta)[ng+(1:q)] <- paste0(names.kins, ".var.intercept")
+          names(fit$theta)[ng+q+(1:q)] <- paste0(names.kins, ".cov.intercept.slope")
+          names(fit$theta)[ng+2*q+(1:q)] <- paste0(names.kins, ".var.slope")
         } else {
-          names(fit$theta)[ng+(1:q)] <- paste0("kins", 1:q)
+          names(fit$theta)[ng+(1:q)] <- names.kins
         }
       }
       if(!fit$converged) {
@@ -409,6 +415,7 @@ glmmkin.ai <- function(fit0, kins, covariance.idx = NULL, group.idx, tau = rep(0
   for(i in 1:ng) res.var[group.idx[[i]]] <- tau[i]
   if(!is.Matrix) fit$Sigma_i <- fit$Sigma_iX <- NULL
   names(alpha) <- names(fit0$coef)
+  names(eta) <- names(mu) <- names(res)
   rownames(cov) <- rownames(vcov(fit0))
   colnames(cov) <- colnames(vcov(fit0))
   return(list(theta=tau, n.pheno=1, n.groups=ng, coefficients=alpha, linear.predictors=eta, fitted.values=mu, Y=Y, X=X, P=fit$P, residuals=res, scaled.residuals=res*as.vector(weights(fit0))/res.var, cov=cov, Sigma_i=fit$Sigma_i, Sigma_iX=fit$Sigma_iX, converged=converged))
@@ -801,4 +808,79 @@ R_fitglmm_ai_noresidual <- function(Y, X, q, kins, ng, tau, fixtau) {
     return(list(Dtau = Dtau, P = NULL, cov = cov, alpha = alpha, eta = eta, Sigma_i = Sigma_i, Sigma_iX = Sigma_iX))
   }
   return(list(Dtau = NULL, P = NULL, cov = cov, alpha = alpha, eta = eta, Sigma_i = Sigma_i, Sigma_iX = Sigma_iX))
+}
+
+coef.glmmkin <- function(object, complete = TRUE, ...)
+{
+    if(complete) object$coefficients
+    else object$coefficients[!is.na(object$coefficients)]
+}
+
+residuals.glmmkin <- function(object, type = c("raw", "scaled"), ...)
+{
+    type <- match.arg(type)
+    res <- switch(type, raw = object$residuals, scaled = object$scaled.residuals)
+    if(!is.null(object$na.action)) res <- naresid(object$na.action, res)
+    res
+}
+
+predict.glmmkin <- function (object, type = c("link", "response"), na.action = na.pass, ...) 
+{
+    type <- match.arg(type)
+    pred <- switch(type, link = object$linear.predictors, response = object$fitted.values)
+    if(!is.null(object$na.action)) pred <- napredict(object$na.action, pred)
+    pred
+}
+
+print.glmmkin <- function(x, digits = max(3L, getOption("digits") - 3L), ...) 
+{
+    cat("\nCall:  ", paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
+    if (length(coef(x))) {
+        cat("Coefficients:\n")
+        print.default(format(x$coefficients, digits = digits), print.gap = 2, quote = FALSE)
+    }
+    else cat("No coefficients\n\n")
+    cat("\nVariance Component Estimates:\n")
+    print.default(format(x$theta, digits = digits), print.gap = 2, quote = FALSE)
+    cat("\n")
+    invisible(x)
+}
+
+summary.glmmkin <- function (object, ...) 
+{
+    aliased <- is.na(coef(object))
+    coef.p <- object$coefficients
+    var.cf <- diag(object$cov)
+    s.err <- sqrt(var.cf)
+    zvalue <- coef.p/s.err
+    dn <- c("Estimate", "Std. Error")
+    pvalue <- 2 * pnorm(-abs(zvalue))
+    coef.table <- cbind(coef.p, s.err, zvalue, pvalue)
+    dimnames(coef.table) <- list(names(coef.p), c(dn, "z value", "Pr(>|z|)"))
+    keep <- match(c("call", "family", "na.action", "residuals", "scaled.residuals"), names(object), 0L)
+    ans <- c(object[keep], list(coefficients = coef.table, theta = object$theta, aliased = aliased))
+    class(ans) <- "summary.glmmkin"
+    return(ans)
+}
+
+print.summary.glmmkin <- function(x, digits = max(3L, getOption("digits") - 3L), signif.stars = getOption("show.signif.stars"), ...) 
+{
+    cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
+    if (length(x$aliased) == 0L) {
+        cat("\nNo Coefficients\n")
+    }
+    else {
+        cat("\nCoefficients:\n")
+        coefs <- x$coefficients
+        if (!is.null(aliased <- x$aliased) && any(aliased)) {
+            cn <- names(aliased)
+            coefs <- matrix(NA, length(aliased), 4L, dimnames = list(cn, colnames(coefs)))
+            coefs[!aliased, ] <- x$coefficients
+        }
+        printCoefmat(coefs, digits = digits, signif.stars = signif.stars, na.print = "NA", ...)
+    }
+    cat("\nVariance Component Estimates:\n")
+    print.default(format(x$theta, digits = digits), print.gap = 2, quote = FALSE)
+    cat("\n")
+    invisible(x)
 }

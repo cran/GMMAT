@@ -94,6 +94,7 @@ For multiple phenotype analysis, \code{theta} is a list of variance-covariance m
   \item{Sigma_iX}{Sigma_i multiplied by X. Used in \code{\link{glmm.score}} and \code{\link{SMMAT}} for sparse matrices.}
   \item{converged}{a logical indicator for convergence.}
   \item{call}{the matched call.}
+  \item{family}{the \code{\link[stats]{family}} object used.}
   \item{id_include}{a vector indicating the \code{id} of rows in \code{data} with nonmissing outcome and covariates, thus are included in the model fit.}
 }
 \references{

@@ -100,8 +100,10 @@ glmm.wald <- function(fixed, data = parent.frame(), kins = NULL, id, random.slop
 	select[select > 0] <- rank(select[select > 0])
 	data <- data[idx, ]
 	data.idx <- match(data[, id], unique(data[, id]))
+	is.repeated <- FALSE
         if(any(duplicated(data[, id]))) {
                 cat("Duplicated id detected...\nAssuming longitudinal data with repeated measures...\n")
+		is.repeated <- TRUE
                 if(method.optim == "Brent") {
                         if(is.null(kins)) {
                                 kins <- diag(length(unique(data[, id])))
@@ -201,7 +203,7 @@ glmm.wald <- function(fixed, data = parent.frame(), kins = NULL, id, random.slop
 				}
 				if(!is.null(time.var)) time.var <- time.var[idx]
 				group.id <- group.id[idx]
-				fit <- try(glmmkin.fit(fit0, tmpkins, time.var, group.id, method = method, method.optim = method.optim, maxiter = maxiter, tol = tol, taumin = taumin, taumax = taumax, tauregion = tauregion, verbose = verbose))
+				fit <- try(glmmkin.fit(fit0, tmpkins, is.repeated, time.var, group.id, method = method, method.optim = method.optim, maxiter = maxiter, tol = tol, taumin = taumin, taumax = taumax, tauregion = tauregion, verbose = verbose))
 				if(!inherits(fit, "try-error")) {
 					BETA[ii] <- fit$coefficients[length(fit$coefficients)]
 					SE[ii] <- sqrt(diag(fit$cov)[length(fit$coefficients)])

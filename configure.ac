@@ -1,4 +1,4 @@
-AC_INIT([GMMAT],[1.4.0],[Han.Chen.2@uth.tmc.edu])
+AC_INIT([GMMAT],[1.5.0],[hanchenphd@gmail.com])
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
